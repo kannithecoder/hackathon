@@ -21,7 +21,7 @@ if api_key:
 # ==========================================
 # SCREEN 1: THE INTERCEPT GATEKEEPER
 # ==========================================
-if st.session_state.session_state.screen_state == "intercept":
+if st.session_state.screen_state == "intercept":
     st.markdown("<h2 style='text-align:center;'>🛑 FocusBrake AI Intercept</h2>", unsafe_allow_html=True)
     st.info("🤖 AI Coach: 'Before I unlock this screen, state your explicit intention below.'")
     user_intent = st.text_input("What is your exact reason for opening this app right now?")
@@ -61,8 +61,8 @@ elif st.session_state.screen_state == "fatigue_check":
                         "Respond strictly in this exact format:\nface_present: [Yes/No]\nStatus: [Alert/Fatigued/No Face Detected]"
                     )
                     
-                    # Passing inputs explicitly into the contents argument
-                    response = model.generate_content(contents=)
+                    # Correctly structured arguments list
+                    response = model.generate_content()
                     ai_result = response.text
                     
                     # Parse the AI response flags
