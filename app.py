@@ -1,5 +1,7 @@
 import streamlit as st
-import time
+import google.generativeai as genai
+from PIL import Image
+import io
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="FocusBrake AI", page_icon="🛑", layout="centered")
@@ -10,62 +12,73 @@ if "time_saved" not in st.session_state:
 if "screen_state" not in st.session_state:
     st.session_state.screen_state = "intercept"
 
-# --- CUSTOM CSS ---
-st.markdown("""
-    <style>
-    .main-title { font-size: 2.5rem; font-weight: 800; color: #1E3A8A; text-align: center; }
-    .subtitle { font-size: 1.1rem; color: #6B7280; text-align: center; margin-bottom: 30px; }
-    .metric-box { background-color: #F3F4F6; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; }
-    </style>
-""", unsafe_allow_html=True)
+# --- SIDEBAR API CONFIGURATION ---
+st.sidebar.header("🔑 AI Brain Setup")
+api_key = st.sidebar.text_input("Enter Gemini API Key:", type="password")
+
+if api_key:
+    genai.configure(api_key=api_key)
 
 # ==========================================
 # SCREEN 1: THE INTERCEPT GATEKEEPER
 # ==========================================
 if st.session_state.screen_state == "intercept":
-    st.markdown("<div class='main-title'>🛑 FocusBrake AI Intercept</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>Your brain tried to open a distracting app out of muscle memory.</div>", unsafe_allow_html=True)
-    
+    st.markdown("<h2 style='text-align:center;'>🛑 FocusBrake AI Intercept</h2>", unsafe_allow_html=True)
     st.info("🤖 AI Coach: 'Before I unlock this screen, state your explicit intention below.'")
-    user_intent = st.text_input("What is your exact, productive reason for opening this app right now?", placeholder="e.g., Checking team meet updates")
+    user_intent = st.text_input("What is your exact reason for opening this app right now?")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Submit Intent Evaluation", type="primary"):
-            if user_intent.strip() == "":
-                st.error("Please fill out your intent box honestly.")
-            elif any(word in user_intent.lower() for word in ["bored", "scroll", "waste", "timepass"]):
-                st.warning("🚨 AI Coach: 'You confessed you are just bored. Step away from the glass!'")
-            else:
-                st.success("✅ Intent verified. Let's run a physical fatigue check next...")
-                time.sleep(1.5)
-                st.session_state.screen_state = "fatigue_check"
-                st.rerun()
-                
-    with col2:
-        if st.button("Cancel & Save My Time"):
-            st.session_state.time_saved += 15
-            st.balloons()
+    if st.button("Submit Intent Evaluation", type="primary"):
+        if user_intent.strip() == "":
+            st.error("Please fill out your intent box honestly.")
+        else:
+            st.session_state.screen_state = "fatigue_check"
+            st.rerun()
 
 # ==========================================
-# SCREEN 2: NATIVE LIVE WEBCAM SCANNER
+# SCREEN 2: REAL GOOGLE AI WEBCAM SCANNER
 # ==========================================
 elif st.session_state.screen_state == "fatigue_check":
-    st.markdown("<div class='main-title'>👁️ Live Fatigue Analyzer</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>Smile or blink at the camera to verify your cognitive alertness levels.</div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center;'>👁️ Live Fatigue Analyzer</h2>", unsafe_allow_html=True)
     
-    # Secure web container for webcam inputs
     img_file = st.camera_input("📷 Take a live analysis snapshot")
     
     if img_file is not None:
-        with st.spinner("🧠 Running physical strain and cognitive load calculations..."):
-            time.sleep(2)
-        st.success("⚡ Metrics Normal: Fatigue index optimal. You are safe to work!")
-        
-        if st.button("Proceed to Dashboard", type="primary"):
-            st.session_state.screen_state = "dashboard"
-            st.rerun()
-            
+        if not api_key:
+            st.warning("⚠️ Please enter your Gemini API Key in the left sidebar to activate the AI analysis!")
+        else:
+            with st.spinner("🧠 Sending image to Google Vision AI for biological validation..."):
+                try:
+                    # Convert browser snapshot to bytes for the AI model
+                    image = Image.open(img_file)
+                    
+                    # Target the fast multimodal model
+                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    
+                    # Prompt designed to check for presence and fatigue status
+                    prompt = (
+                        "Analyze this webcam snapshot from a screen time blocking app. "
+                        "Determine two things: 1. Is there a clear human face present in the frame? "
+                        "2. Does the person look alert, or do they show signs of severe exhaustion/closed eyes? "
+                        "Respond strictly in this exact format:\name_present: [Yes/No]\nStatus: [Alert/Fatigued/No Face Detected]"
+                    )
+                    
+                    response = model.generate_content()
+                    ai_result = response.text
+                    
+                    # Parse the AI response flags
+                    if "face_present: yes" in ai_result.lower() and "status: alert" in ai_result.lower():
+                        st.success("⚡ Live Validation Passed: Human presence verified. Alertness levels optimal!")
+                        if st.button("Proceed to Dashboard", type="primary"):
+                            st.session_state.screen_state = "dashboard"
+                            st.rerun()
+                    elif "face_present: no" in ai_result.lower() or "no face detected" in ai_result.lower():
+                        st.error("❌ Validation Failed: No human face detected in the camera frame! Stop trying to cheat the system.")
+                    else:
+                        st.error("🚨 Fatigue Alert: The AI detected heavy strain or closed eyes. Step away and rest your eyes!")
+                        
+                except Exception as e:
+                    st.error(f"API Error: Please check your key entry details. Details: {e}")
+                    
     if st.button("🔙 Back"):
         st.session_state.screen_state = "intercept"
         st.rerun()
@@ -74,18 +87,8 @@ elif st.session_state.screen_state == "fatigue_check":
 # SCREEN 3: DEEP WORK DASHBOARD
 # ==========================================
 elif st.session_state.screen_state == "dashboard":
-    st.markdown("<div class='main-title'>⚡ FocusBrake Deep Work Matrix</div>", unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"<div class='metric-box'>⏱️ Total Time Saved<br><span style='font-size:1.5rem; color:#2563EB;'>{st.session_state.time_saved} Mins</span></div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown("<div class='metric-box'>🎯 Strain Risk Level<br><span style='font-size:1.5rem; color:#10B981;'>Optimal</span></div>", unsafe_allow_html=True)
-        
-    st.write("---")
-    st.subheader("📝 Active Core Task Checklist")
-    st.checkbox("Draft hackathon solution proposal documentation")
-    st.checkbox("Test frontend interface interactions")
+    st.markdown("<h2 style='text-align:center;'>⚡ FocusBrake Dashboard</h2>", unsafe_allow_html=True)
+    st.markdown(f"⏱️ *Total Time Saved:* {st.session_state.time_saved} Mins")
     
     if st.button("Lock Workspace Gatekeeper"):
         st.session_state.screen_state = "intercept"
