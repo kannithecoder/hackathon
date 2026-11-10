@@ -1,7 +1,6 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import io
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="FocusBrake AI", page_icon="🛑", layout="centered")
@@ -22,7 +21,7 @@ if api_key:
 # ==========================================
 # SCREEN 1: THE INTERCEPT GATEKEEPER
 # ==========================================
-if st.session_state.screen_state == "intercept":
+if st.session_state.session_state.screen_state == "intercept":
     st.markdown("<h2 style='text-align:center;'>🛑 FocusBrake AI Intercept</h2>", unsafe_allow_html=True)
     st.info("🤖 AI Coach: 'Before I unlock this screen, state your explicit intention below.'")
     user_intent = st.text_input("What is your exact reason for opening this app right now?")
@@ -59,10 +58,11 @@ elif st.session_state.screen_state == "fatigue_check":
                         "Analyze this webcam snapshot from a screen time blocking app. "
                         "Determine two things: 1. Is there a clear human face present in the frame? "
                         "2. Does the person look alert, or do they show signs of severe exhaustion/closed eyes? "
-                        "Respond strictly in this exact format:\name_present: [Yes/No]\nStatus: [Alert/Fatigued/No Face Detected]"
+                        "Respond strictly in this exact format:\nface_present: [Yes/No]\nStatus: [Alert/Fatigued/No Face Detected]"
                     )
                     
-                    response = model.generate_content()
+                    # Passing inputs explicitly into the contents argument
+                    response = model.generate_content(contents=)
                     ai_result = response.text
                     
                     # Parse the AI response flags
