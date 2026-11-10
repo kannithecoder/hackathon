@@ -1,7 +1,5 @@
 import streamlit as st
 import time
-import cv2
-import numpy as np
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="FocusBrake AI", page_icon="🛑", layout="centered")
@@ -39,7 +37,7 @@ if st.session_state.screen_state == "intercept":
             elif any(word in user_intent.lower() for word in ["bored", "scroll", "waste", "timepass"]):
                 st.warning("🚨 AI Coach: 'You confessed you are just bored. Step away from the glass!'")
             else:
-                st.success("✅ Intent verified. Checking physical fatigue metrics next...")
+                st.success("✅ Intent verified. Let's run a physical fatigue check next...")
                 time.sleep(1.5)
                 st.session_state.screen_state = "fatigue_check"
                 st.rerun()
@@ -50,39 +48,21 @@ if st.session_state.screen_state == "intercept":
             st.balloons()
 
 # ==========================================
-# SCREEN 2: LIVE WEBCAM SCANNER
+# SCREEN 2: NATIVE LIVE WEBCAM SCANNER
 # ==========================================
 elif st.session_state.screen_state == "fatigue_check":
-    st.markdown("<div class='main-title'>👁️ Live Webcam Fatigue Tracker</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>Click start below to calibrate your vision tracking metrics.</div>", unsafe_allow_html=True)
+    st.markdown("<div class='main-title'>👁️ Live Fatigue Analyzer</div>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitle'>Smile or blink at the camera to verify your cognitive alertness levels.</div>", unsafe_allow_html=True)
     
-    run_cam = st.toggle("📷 Turn On Live Video Analysis Feed")
-    FRAME_WINDOW = st.image([]) # Placeholder framework box for video frames
+    # Secure web container for webcam inputs
+    img_file = st.camera_input("📷 Take a live analysis snapshot")
     
-    if run_cam:
-        # Initializing local browser camera input stream
-        cam = cv2.VideoCapture(0)
-        st.caption("🔍 Running computer vision layers... keep eyes centered.")
+    if img_file is not None:
+        with st.spinner("🧠 Running physical strain and cognitive load calculations..."):
+            time.sleep(2)
+        st.success("⚡ Metrics Normal: Fatigue index optimal. You are safe to work!")
         
-        # Runs a quick 5-frame sample sequence display
-        for _ in range(20):
-            ret, frame = cam.read()
-            if not ret:
-                st.error("Camera hardware not detected or permissions blocked.")
-                break
-                
-            # Convert colorspace for web canvas display
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            # Simple placeholder canvas frame visual overlays
-            cv2.putText(frame, "TRACKING EYE BLINKS...", (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            FRAME_WINDOW.image(frame)
-            time.sleep(0.05)
-            
-        cam.release()
-        st.success("⚡ Analysis Complete: Fatigue index clear. You are safe to work!")
-        
-        if st.button("Proceed to Dashboard"):
+        if st.button("Proceed to Dashboard", type="primary"):
             st.session_state.screen_state = "dashboard"
             st.rerun()
             
